@@ -67,6 +67,8 @@ export function BackgammonBoard({ session }: BoardProps) {
   const me = view.you;
   const them = otherSeat(me);
   const myTurn = view.toAct === me && !view.outcome;
+  // Changes only when a fresh throw lands, which is what makes the dice tumble.
+  const rollKey = `${view.turn}:${view.rolled.join(',')}:${view.phase}`;
   const send = (a: BackgammonAction) => session.send(a);
 
   const sources = new Set(view.legal.map((m) => String(m.from)));
@@ -177,25 +179,12 @@ export function BackgammonBoard({ session }: BoardProps) {
           </button>
 
           <div className="bg__dice">
-            <AnimatePresence mode="popLayout">
-              {view.rolled.map((d, i) => {
-                const spent = view.dice.filter((x) => x === d).length;
-                const shownBefore = view.rolled.slice(0, i).filter((x) => x === d).length;
-                const used = shownBefore >= spent;
-                return (
-                  <motion.span
-                    key={`${i}-${d}`}
-                    className={`die${used ? ' is-used' : ''}`}
-                    initial={{ opacity: 0, scale: 0.5, rotate: -25 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    exit={{ opacity: 0, scale: 0.6 }}
-                    transition={spring}
-                  >
-                    <Pips value={d} />
-                  </motion.span>
-                );
-              })}
-            </AnimatePresence>
+            {view.rolled.map((d, i) => {
+              // A die still to be played is one of the values left in `dice`.
+              const spent = view.dice.filter((x) => x === d).length;
+              const shownBefore = view.rolled.slice(0, i).filter((x) => x === d).length;
+              return <Die key={i} value={d} used={shownBefore >= spent} rollKey={rollKey} />;
+            })}
           </div>
         </div>
 
@@ -281,6 +270,53 @@ function Checkers({ count, owner }: { count: number; owner: 'me' | 'them' }) {
         </motion.span>
       ))}
     </>
+  );
+}
+
+/**
+ * One die.
+ *
+ * The element is keyed by position, never by value, so a new throw animates in
+ * place instead of unmounting and remounting — that swap was the flicker. On a
+ * fresh throw it tumbles through a few random faces before settling on the
+ * real one.
+ */
+function Die({ value, used, rollKey }: { value: number; used: boolean; rollKey: string }) {
+  const [face, setFace] = useState(value);
+  const [tumbling, setTumbling] = useState(false);
+
+  useEffect(() => {
+    let n = 0;
+    setTumbling(true);
+    const id = setInterval(() => {
+      n += 1;
+      if (n >= 6) {
+        clearInterval(id);
+        setFace(value);
+        setTumbling(false);
+      } else {
+        setFace(1 + Math.floor(Math.random() * 6));
+      }
+    }, 55);
+    return () => {
+      clearInterval(id);
+      setFace(value);
+      setTumbling(false);
+    };
+  }, [rollKey, value]);
+
+  return (
+    <motion.span
+      className={`die${used ? ' is-used' : ''}`}
+      animate={
+        tumbling
+          ? { rotate: [0, -14, 12, -8, 0], scale: [1, 1.14, 0.96, 1.06, 1], y: [0, -7, 2, -3, 0] }
+          : { rotate: 0, scale: 1, y: 0 }
+      }
+      transition={tumbling ? { duration: 0.34, ease: 'easeInOut' } : spring}
+    >
+      <Pips value={face} />
+    </motion.span>
   );
 }
 

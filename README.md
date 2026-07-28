@@ -12,8 +12,8 @@ cities.
 
 **Durak** — the Russian card game, ported from an earlier Godot version of mine.
 
-**Backgammon** — the full thing: bar, hitting, bearing off, gammons. No doubling
-cube.
+**Backgammon** — tavla, Turkish rules: the opening throw only picks who starts,
+and a mars counts double. Bar, hitting and bearing off all in. No doubling cube.
 
 Either one, two ways to play:
 

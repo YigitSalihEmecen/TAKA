@@ -5,6 +5,13 @@
  * adds is the list of moves the player may legally make, computed by the same
  * code the server enforces with. The board never has to reason about rules.
  *
+ * Turkish rules (tavla), which differ from the international game in two ways:
+ *
+ *   - the opening throw only decides who starts; the winner then throws both
+ *     dice fresh, rather than playing the two single dice that were thrown;
+ *   - a mars (the loser has borne nothing off) counts double, and there is no
+ *     separate triple "backgammon" score.
+ *
  * The doubling cube is deliberately left out — see ARCHITECTURE.md §14.
  */
 
@@ -111,16 +118,11 @@ function endTurn(s: BackgammonState) {
 function checkOver(s: BackgammonState): boolean {
   for (const seat of [0, 1] as Seat[]) {
     if (!hasWon(s, seat)) continue;
-    const mult = winMultiplier(s, seat);
+    const mars = winMultiplier(s, seat) > 1;
     s.outcome = {
       winner: seat,
-      headline: '{winner} bears off',
-      detail:
-        mult === 3
-          ? 'A backgammon — triple stakes.'
-          : mult === 2
-            ? 'A gammon — double stakes.'
-            : 'All fifteen home.',
+      headline: mars ? '{winner} takes a mars' : '{winner} bears off',
+      detail: mars ? 'Not a single checker off — that one counts double.' : 'All fifteen home.',
     };
     s.phase = 'over';
     return true;
@@ -134,7 +136,7 @@ export const backgammon: GameDefinition<BackgammonState, BackgammonAction, Backg
     title: 'Backgammon',
     subtitle: 'Everywhere · two players',
     blurb:
-      'Tavla. Twenty-four points, fifteen checkers each, and two dice deciding how far you get. Race your checkers home and bear them off — but leave one alone and it gets sent back to the start.',
+      'Tavla, Turkish rules. Twenty-four points, fifteen checkers each, and two dice deciding how far you get. Race your checkers home and bear them off — but leave one alone and it gets sent back to the start.',
     glyph: '⚄',
     duration: '15–30 min',
     available: true,
@@ -177,15 +179,13 @@ export const backgammon: GameDefinition<BackgammonState, BackgammonAction, Backg
             note(s, null, 'A tie — throw again');
             return { ok: true, state: s };
           }
+          // Turkish rule: the opening throw only settles who goes first. The
+          // winner then rolls both dice properly on their own turn.
           s.turn = x > y ? 0 : 1;
-          s.dice = [x, y];
-          s.rolled = [x, y];
-          s.phase = 'move';
-          note(s, s.turn, `starts with ${x} and ${y}`);
-          if (legalMoves(s, s.turn, s.dice).length === 0) {
-            note(s, s.turn, 'has nothing to play');
-            endTurn(s);
-          }
+          s.dice = [];
+          s.rolled = [];
+          s.phase = 'roll';
+          note(s, s.turn, `throws higher and starts`);
           return { ok: true, state: s };
         }
 

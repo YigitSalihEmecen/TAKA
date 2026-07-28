@@ -33,8 +33,9 @@ export default function App() {
         : undefined;
   const title = gameId ? getGame(gameId)?.meta.title : undefined;
 
-  const back: Route | undefined =
-    route.name === 'home' ? undefined : gameId ? { name: 'setup', gameId } : { name: 'home' };
+  // Always home. Stepping back to the game's own setup page was a distinction
+  // nobody wanted from inside a game.
+  const back: Route | undefined = route.name === 'home' ? undefined : { name: 'home' };
 
   const rightSlot =
     route.name === 'table' && online.room ? (

@@ -208,17 +208,12 @@ export function legalMoves(p: Position, seat: Seat, dice: number[]): Move[] {
 export const hasWon = (p: Position, seat: Seat): boolean => p.off[seat] === CHECKERS;
 
 /**
- * 1 for a plain loss, 2 for a gammon (loser bore nothing off), 3 for a
- * backgammon (loser also still has a checker on the bar or in the winner's
- * home board).
+ * Turkish scoring: 2 for a mars — the loser has borne nothing off — and 1
+ * otherwise. Tavla has no separate triple "backgammon" score.
  */
-export function winMultiplier(p: Position, winner: Seat): 1 | 2 | 3 {
+export function winMultiplier(p: Position, winner: Seat): 1 | 2 {
   const loser: Seat = winner === 0 ? 1 : 0;
-  if (p.off[loser] > 0) return 1;
-  const [lo, hi] = homeRange(winner);
-  if (p.bar[loser] > 0) return 3;
-  for (let i = lo; i <= hi; i++) if (countAt(p, i, loser) > 0) return 3;
-  return 2;
+  return p.off[loser] > 0 ? 1 : 2;
 }
 
 /** The opening position. */

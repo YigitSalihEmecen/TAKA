@@ -37,7 +37,8 @@ Sofia" or "send this to Yiğit" as appropriate. Keep new copy in that register;
 do not drift back to product language.
 
 Two games so far: **Durak**, the Russian card game, ported from an earlier Godot
-implementation at `~/Documents/GODOT/durak`; and **Backgammon**.
+implementation at `~/Documents/GODOT/durak`; and **Backgammon**, played by
+Turkish (tavla) rules.
 
 Design brief: Anthropic's visual language — warm paper, ink, one clay accent,
 serif display type, generous motion. Explicitly *not* a standard-looking webapp.
@@ -634,6 +635,16 @@ get right — `BackgammonBoard` mirrors it for whoever is looking, via
 `absOf(visual, you) = you === 0 ? visual : 23 - visual`, which puts each
 player's home board bottom-right exactly as on a real board.
 
+**Turkish rules, not international.** Two deliberate differences, both in
+`shared/games/backgammon/index.ts`:
+
+- the opening throw only decides *who starts*. The winner then rolls both dice
+  fresh on their own turn, rather than playing the two single dice thrown. (The
+  international rule plays them, which is what this had at first and what read
+  as "broken" to a tavla player.)
+- a **mars** — the loser has borne nothing off — counts double, and there is no
+  separate triple "backgammon" score. `winMultiplier` returns 1 or 2 only.
+
 Two things worth knowing:
 
 - **Legality is computed, not trusted.** `legalMoves()` enforces the awkward
@@ -780,6 +791,10 @@ Know these before "fixing" them:
   used dragging and it does not survive touch well.
 - **No sound.** It gets played in bed, late, next to someone asleep.
 - **No doubling cube** in backgammon, and no match play — single games only.
+- **Negative CSS grid gaps.** They do nothing; gaps cannot be negative. An
+  attempt to overlap the Durak table's six slots that way silently left the
+  table 492px wide on a 430px phone, with the right-hand side off screen.
+  Narrow the items instead.
 - **The attacker cannot interject while the defender thinks** — strict alternation,
   a deliberate simplification of real Durak for on-screen clarity.
 - **Single process.** Rooms are a `Map`; horizontal scaling would need a rewrite

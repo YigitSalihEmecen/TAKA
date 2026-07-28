@@ -20,6 +20,7 @@ import {
   centreDelta,
   flyFromDeck,
   flyOntoSlot,
+  offsetToSlot,
   useDealSequence,
 } from './dealing.ts';
 import './durak.css';
@@ -57,6 +58,14 @@ export function DurakBoard({ session }: BoardProps) {
    * rotated ancestor — it measured wrong and the card jumped to the table
    * before snapping into place. An explicit origin is immune to that.
    */
+  /**
+   * Where each card was on screen the moment it was tapped. A card should fly
+   * out of the place it actually occupied in the fan — using the fan's centre
+   * made every card launch from the middle of the hand regardless of where it
+   * had been sitting.
+   */
+  const liftedFrom = useRef(new Map<Card, { x: number; y: number }>());
+
   const prev = useRef({
     hand: new Set<Card>(),
     table: new Set<Card>(),
@@ -119,14 +128,18 @@ export function DurakBoard({ session }: BoardProps) {
 
   /** A card landing on the table flies out of whichever hand played it, into
    *  the fixed slot it will occupy for the rest of the bout. */
-  const ontoTable = (card: Card, index: number) => ({
-    ...flyOntoSlot(
-      tableRef.current,
-      was.hand.has(card) ? selfFanRef.current : oppFanRef.current,
-      SLOT_COLUMNS[index] - 1,
-    ),
-    scale: 0.84,
-  });
+  const ontoTable = (card: Card, index: number) => {
+    const column = SLOT_COLUMNS[index] - 1;
+    const lifted = was.hand.has(card) ? liftedFrom.current.get(card) : undefined;
+    const offset = lifted
+      ? offsetToSlot(tableRef.current, lifted, column)
+      : flyOntoSlot(
+          tableRef.current,
+          was.hand.has(card) ? selfFanRef.current : oppFanRef.current,
+          column,
+        );
+    return { ...offset, scale: 0.84 };
+  };
 
   /** A card landing in a hand comes from the table if it was just scooped up,
    *  and out of the stock otherwise. */
@@ -152,8 +165,12 @@ export function DurakBoard({ session }: BoardProps) {
   const highlightTargets = selected ? targetsFor(selected) : [];
   const selectedCanTransfer = selected ? canTransfer(selected) : false;
 
-  const onHandCard = (card: Card) => {
+  const onHandCard = (card: Card, el: HTMLElement | null) => {
     if (!myTurn) return;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      liftedFrom.current.set(card, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
 
     if (iAttack) {
       if (canAttackWith(ctx, card, view.opponentCount)) send({ type: 'attack', card });
@@ -439,7 +456,7 @@ export function DurakBoard({ session }: BoardProps) {
                     muted={myTurn && !playable}
                     selected={selected === card}
                     transition={spring}
-                    onClick={() => onHandCard(card)}
+                    onClick={(e) => onHandCard(card, e.currentTarget as HTMLElement)}
                   />
                 </motion.div>
               );

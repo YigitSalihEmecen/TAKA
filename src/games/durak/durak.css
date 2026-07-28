@@ -773,15 +773,21 @@
 /* --- tighter on phones -------------------------------------------------- */
 
 @media (max-width: 700px) {
+  /* Override the *base*, not `--card-w`: the opponent's fan derives its own
+     size from `--card-base`, so overriding only `--card-w` left that fan sized
+     for a laptop and hanging off the side of the screen. */
   :root {
-    --card-w: clamp(48px, 16vw, 72px);
+    --card-base: clamp(44px, 15vw, 70px);
   }
 
-  /* Six fixed slots will not fit side by side on a phone, so they overlap —
-     which reads as cards laid down on top of one another, and keeps every
-     slot in a fixed place. */
+  /* Six fixed slots have to fit inside the viewport. The previous attempt used
+     a negative column-gap to overlap them, which does nothing — CSS grid gaps
+     cannot be negative — so the table stayed 492px wide on a 430px phone and
+     the right-hand side of the game was simply off screen. Narrowing the
+     table's own cards is what actually fits. */
   .tabletop {
-    column-gap: calc(var(--card-w) * -0.34);
+    --card-w: min(var(--card-base), calc((100vw - 24px) / 6 - 14px));
+    column-gap: 0;
   }
 
   /* No room to flank the table — tuck the piles into the bottom corners. */

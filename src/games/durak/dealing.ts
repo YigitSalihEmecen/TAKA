@@ -149,14 +149,26 @@ export function flyOntoSlot(
   sourceEl: HTMLElement | null,
   column: number,
 ): { x: number; y: number } {
-  if (!tableEl || !sourceEl) return { x: 0, y: -60 };
+  if (!sourceEl) return { x: 0, y: -60 };
+  const src = sourceEl.getBoundingClientRect();
+  if (!src.width) return { x: 0, y: -60 };
+  return offsetToSlot(tableEl, { x: src.left + src.width / 2, y: src.top + src.height / 2 }, column);
+}
+
+/** Same, from a point that was measured earlier — e.g. where a card was when
+ *  it was tapped, which is gone from the DOM by the time it lands. */
+export function offsetToSlot(
+  tableEl: HTMLElement | null,
+  from: { x: number; y: number },
+  column: number,
+): { x: number; y: number } {
+  if (!tableEl) return { x: 0, y: -60 };
 
   const table = tableEl.getBoundingClientRect();
-  const src = sourceEl.getBoundingClientRect();
-  if (!table.width || !src.width) return { x: 0, y: -60 };
+  if (!table.width) return { x: 0, y: -60 };
 
-  const srcCx = src.left + src.width / 2;
-  const srcCy = src.top + src.height / 2;
+  const srcCx = from.x;
+  const srcCy = from.y;
 
   const cs = getComputedStyle(tableEl);
   const cols = cs.gridTemplateColumns.split(' ').map(parseFloat).filter((n) => !Number.isNaN(n));

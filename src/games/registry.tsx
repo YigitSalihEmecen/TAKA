@@ -55,11 +55,11 @@ export const GAME_UI: Record<string, GameUI> = {
     howToPlay: [
       {
         title: 'The race',
-        body: 'Fifteen checkers each, moving in opposite directions around twenty-four points. Yours travel towards the home board at the bottom right of your screen. First to bring all fifteen home and off the board wins.',
+        body: 'Tavla, Turkish rules. Fifteen checkers each, moving in opposite directions around twenty-four points. Yours travel towards the home board at the bottom right of your screen. First to bring all fifteen home and off the board wins.',
       },
       {
         title: 'The dice',
-        body: 'Throw one die each to see who starts — the higher throw plays those two numbers. After that you roll two dice and move one checker per die, or two moves with one checker. Roll a double and you get that number four times.',
+        body: 'Throw one die each to see who starts — the higher throw wins, and then rolls both dice properly for the first turn. Each turn you move one checker per die, or make two moves with the same checker. Roll a double and you get that number four times.',
       },
       {
         title: 'Points and blots',
@@ -71,7 +71,7 @@ export const GAME_UI: Record<string, GameUI> = {
       },
       {
         title: 'Bearing off',
-        body: 'Once all fifteen are in your home board you can start taking them off. An exact roll bears a checker off; a higher roll bears off from your furthest point when nothing sits behind it. Bear off all fifteen before your opponent bears off any and it is a gammon — twice the sting.',
+        body: 'Once all fifteen are in your home board you can start taking them off. An exact roll bears a checker off; a higher roll bears off from your furthest point when nothing sits behind it. Bear off all fifteen before your opponent has taken a single one off and it is a mars — worth double.',
       },
     ],
   },
