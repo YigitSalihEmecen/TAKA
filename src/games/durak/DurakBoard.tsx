@@ -33,7 +33,7 @@ const softSpring = { type: 'spring' as const, stiffness: 260, damping: 30 };
  * Hands swell past a dozen cards when someone keeps taking the table, so the
  * fan has to tighten rather than run off the edge of the screen.
  */
-const overlap = (n: number, base: number) => Math.min(0.36, base + Math.max(0, n - 6) * 0.045);
+const overlap = (n: number, base: number) => Math.min(0.4, base + Math.max(0, n - 5) * 0.06);
 
 export function DurakBoard({ session }: BoardProps) {
   const view = session.view as DurakView | null;

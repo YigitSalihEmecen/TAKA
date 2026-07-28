@@ -791,10 +791,16 @@ Know these before "fixing" them:
   used dragging and it does not survive touch well.
 - **No sound.** It gets played in bed, late, next to someone asleep.
 - **No doubling cube** in backgammon, and no match play — single games only.
-- **Negative CSS grid gaps.** They do nothing; gaps cannot be negative. An
-  attempt to overlap the Durak table's six slots that way silently left the
-  table 492px wide on a 430px phone, with the right-hand side off screen.
-  Narrow the items instead.
+- **Negative CSS grid gaps do nothing** — gaps cannot be negative. Overlap by
+  making the tracks narrower than the items instead.
+- **Do not override `--card-w` on a subtree.** `--card-h` is computed on `:root`
+  from `:root`'s `--card-w` and descendants inherit that *already resolved*
+  value, so overriding the width lower down shrinks cards horizontally only.
+  The Durak table did this and its cards came out at aspect 2.1 against the
+  hand's 1.3.
+- **`.board` sets `grid-template-columns: minmax(0, 1fr)`.** A grid sizes to its
+  widest row, so a hand holding a dozen cards stretched the whole board past the
+  viewport — taking the table with it, whose slots then drifted.
 - **The attacker cannot interject while the defender thinks** — strict alternation,
   a deliberate simplification of real Durak for on-screen clarity.
 - **Single process.** Rooms are a `Map`; horizontal scaling would need a rewrite
