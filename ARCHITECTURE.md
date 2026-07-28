@@ -227,7 +227,7 @@ Generic deck toolkit for any card game.
 - A `Card` is a **string**: rank digits + suit letter — `"6S"`, `"10H"`, `"14D"`.
   Ranks are numbers 2–14 (11=J, 12=Q, 13=K, 14=A); `labelOf()` renders the face.
   Strings mean cards serialise for free and compare with `===`, which is what
-  makes them usable as React keys and framer `layoutId`s.
+  makes them usable as React keys.
 - `buildDeck(36 | 52)`, `shuffle(arr, rng)`, `makeRng(seed)` (mulberry32 — same
   seed, same shuffle, so bugs are reproducible), `bySuitThenRank`, `byRankThenSuit`.
 
@@ -443,11 +443,35 @@ status prose → JSX → small local components (`SeatPlate`, `DeckCorner`,
 - `selected` clears whenever `session.rev` changes.
 - Cards you cannot play get `.is-muted`; cards you can get `.is-live`.
 
-**Animation** — every card carries `layoutId={card}`. Because a card string is
-unique and the hand element unmounts in the same render as the table element
-mounts, framer-motion animates the card *physically flying* from your hand to the
-table for free. Do not give two simultaneous elements the same `layoutId`;
-face-down cards deliberately have none.
+**Animation** — every card that appears is told explicitly where to come *from*.
+`DurakBoard` keeps a `prev` ref holding the previous view's hand, table, hand
+size, opponent count and discard count, and compares against it:
+
+| A card appears… | …flying from |
+|---|---|
+| on the table, and it was in your hand | your fan |
+| on the table, and it was not | the opponent's fan |
+| in your hand, and the table was just *taken* | the table |
+| in your hand otherwise | the deck |
+
+"The table was taken" is distinguished from "the bout was beaten" by whether
+`discardCount` went up — a beaten bout goes to the discard and both hands then
+refill from the stock, which is a different animation.
+
+> **Do not replace this with `layoutId`.** It was written that way first and it
+> was wrong: hand cards live inside fan slots that framer rotates, and layout
+> projection cannot survive a rotated ancestor. Cards jumped to the table and
+> then snapped into position. The same bug hit table cards, which carried both
+> a `layoutId` and a `rotate`, inside a `.bout` wrapper that was also animating
+> its scale on enter. Explicit origins are immune to all of it.
+
+Two supporting details that are load-bearing:
+
+- A hand card's `exit` is instantaneous. Its table copy takes over from exactly
+  the same point, so any fade would read as a duplicate card.
+- The defence card is offset with `left`/`top`, not `translate`. A transform on
+  a card that framer is animating gets measured into the projection and applied
+  twice.
 
 `overlap(n, base)` tightens the fan as a hand grows past six cards, so a
 twelve-card hand does not run off the screen.
@@ -483,10 +507,9 @@ analytically from the same `overlap()` fraction the CSS margins use, with the
 card width read back off a real card in the deck (`DECK_CARD_SCALE` mirrors
 `.pcard--small`).
 
-Cards moving hand→table or table→hand are **not** affected: they have a matching
-`layoutId`, and framer-motion's shared-layout transition takes precedence over
-`initial`. That is why one mechanism covers drawing, playing, and scooping up a
-taken table.
+Cards moving hand→table or table→hand are handled by the same `initial`
+mechanism with a different origin — see the table in §7. Nothing in this board
+relies on framer's shared-layout (`layoutId`) transitions.
 
 ## 8. The design system
 
@@ -646,8 +669,17 @@ Run both plus `npx tsc --noEmit` before considering a change done.
   unused import fails `npm run build`. Prefix intentionally-unused params with `_`.
 - **`verbatimModuleSyntax`** — type-only imports must say `import type`.
 - **Import extensions are required** (`'./rules.ts'`), including in `src/`.
-- **Cards are strings**, and those strings are used as React keys and framer
-  `layoutId`s. Never construct two live DOM nodes for the same card.
+- **Cards are strings**, and those strings are used as React keys. Never
+  construct two live DOM nodes for the same card.
+- **Reserved heights must include padding.** `box-sizing` is `border-box`
+  globally, so a `min-height` that only covers the card leaves the fan short by
+  exactly its padding while it is empty during the shuffle — which shifted every
+  rule on the board when the cards landed. `.fan` derives its `min-height` from
+  `--fan-pad-top`/`--fan-pad-bottom`, the same variables that set its padding.
+- **Action buttons are disabled, never unmounted.** Mounting them on
+  `canEndBout()` / `canTake()` made them flicker on every view the server
+  pushed. Only the transfer chip appears and disappears, and only in response to
+  you picking up a card.
 - **`.claude/settings.local.json`** exists; do not commit secrets there.
 - **`localStorage` keys**: `taka.clientId`, `taka.name`, `taka.theme`,
   `taka.pass`.

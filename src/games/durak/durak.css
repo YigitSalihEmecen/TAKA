@@ -88,9 +88,13 @@
   inset: 0 auto auto 0;
 }
 
+/* Offset by position, not by transform: `translate` on an element that framer
+   is layout-animating gets measured into the projection and double-applied,
+   which is what made played cards drift to the middle and snap. */
 .bout__defense {
-  transform-origin: 40% 40%;
-  translate: 14px 22px;
+  left: 15px !important;
+  top: 24px !important;
+  transform-origin: 42% 42%;
   z-index: 2;
   box-shadow: var(--shade-lift) !important;
 }
@@ -300,7 +304,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 42px;
   flex-wrap: wrap;
+}
+
+/* A fixed width so swapping "Bout beaten" for "Take the table" does not shove
+   the rest of the row sideways. */
+.btn--action {
+  min-width: 136px;
 }
 
 .actionbar__buttons {
@@ -368,16 +379,23 @@
 
 /* --- fans --------------------------------------------------------------- */
 
+/* The reserved height has to cover the padding as well as a card, because
+   box-sizing is border-box. Getting this wrong collapsed the fan by exactly
+   the padding while it was empty during the shuffle, which shunted every
+   horizontal rule on the board when the cards arrived. Padding is declared
+   through these two variables so the two can never drift apart again. */
 .fan {
+  --fan-pad-top: 6px;
+  --fan-pad-bottom: 10px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(var(--card-h) + 12px);
-  padding: 6px 0 10px;
+  padding: var(--fan-pad-top) 0 var(--fan-pad-bottom);
+  min-height: calc(var(--card-h) + var(--fan-pad-top) + var(--fan-pad-bottom));
 }
 
 .fan--self {
-  padding-top: 14px;
+  --fan-pad-top: 14px;
 }
 
 /* Slightly smaller than your own hand, but whole — this used to be clipped to
@@ -385,9 +403,9 @@
    across the cards. */
 .fan--opponent {
   --card-w: calc(var(--card-base) * 0.84);
+  --fan-pad-top: 4px;
+  --fan-pad-bottom: 6px;
   align-items: flex-start;
-  min-height: 0;
-  padding: 4px 0 6px;
 }
 
 .fan__slot {
@@ -817,5 +835,10 @@
 
 .corner,
 .tabletop {
-  transition: opacity 0.45s var(--ease);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease-out);
+}
+
+.board[data-phase='shuffle'] .corner,
+.board[data-phase='deal'] .corner--discard {
+  transform: translateY(10px);
 }

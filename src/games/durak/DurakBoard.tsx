@@ -37,10 +37,40 @@ export function DurakBoard({ session }: BoardProps) {
   const feltRef = useRef<HTMLDivElement>(null);
   const selfFanRef = useRef<HTMLDivElement>(null);
   const oppFanRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const phase = useDealSequence(view);
+
+  /**
+   * The board as it was one view ago.
+   *
+   * Every card that appears is given an explicit place to come *from*, worked
+   * out by comparing against this. We deliberately do not use framer's
+   * `layoutId` shared-element transition for that: the hand is a fan, so each
+   * card sits inside a rotated slot, and layout projection cannot survive a
+   * rotated ancestor — it measured wrong and the card jumped to the table
+   * before snapping into place. An explicit origin is immune to that.
+   */
+  const prev = useRef({
+    hand: new Set<Card>(),
+    table: new Set<Card>(),
+    handSize: 0,
+    oppCount: 0,
+    discard: 0,
+  });
 
   // A new view means the board moved on; nothing stays picked up.
   useEffect(() => setSelected(null), [session.rev]);
+
+  useEffect(() => {
+    if (!view) return;
+    prev.current = {
+      hand: new Set(view.hand),
+      table: new Set(view.table.flatMap((p) => (p.defense ? [p.attack, p.defense] : [p.attack]))),
+      handSize: view.hand.length,
+      oppCount: view.opponentCount,
+      discard: view.discardCount,
+    };
+  }, [session.rev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!session.error) return;
@@ -72,6 +102,26 @@ export function DurakBoard({ session }: BoardProps) {
   const open = undefendedPairs(view.table);
 
   const send = (a: DurakAction) => session.send(a);
+
+  // --- where does a card that just appeared come from? ---------------------
+
+  const was = prev.current;
+  /** The table emptied into somebody's hand rather than into the discard. */
+  const tableWasTaken =
+    was.table.size > 0 && view.table.length === 0 && view.discardCount === was.discard;
+
+  /** A card landing on the table flies out of whichever hand played it. */
+  const ontoTable = (card: Card) => ({
+    ...centreDelta(tableRef.current, was.hand.has(card) ? selfFanRef.current : oppFanRef.current),
+    scale: 0.84,
+  });
+
+  /** A card landing in a hand comes from the table if it was just scooped up,
+   *  and out of the stock otherwise. */
+  const intoHand = (card: Card, index: number, count: number, lap: number) =>
+    tableWasTaken && was.table.has(card)
+      ? { ...centreDelta(selfFanRef.current, tableRef.current), scale: 0.9, rotate: 0 }
+      : { ...flyFromDeck(deckRef.current, selfFanRef.current, index, count, lap), scale: 0.7, rotate: 14 };
 
   // --- what can this card do right now? ------------------------------------
 
@@ -211,7 +261,7 @@ export function DurakBoard({ session }: BoardProps) {
           </AnimatePresence>
         </div>
 
-        <div className={`tabletop${view.table.length === 0 ? ' is-empty' : ''}`}>
+        <div className={`tabletop${view.table.length === 0 ? ' is-empty' : ''}`} ref={tableRef}>
           <AnimatePresence>
             {view.table.length === 0 && !view.outcome && phase === 'ready' && (
               <motion.span
@@ -231,32 +281,30 @@ export function DurakBoard({ session }: BoardProps) {
               return (
                 <motion.div
                   key={pair.attack}
+                  layout
                   className={`bout${isTarget ? ' is-target' : ''}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, y: 40, scale: 0.85, transition: { duration: 0.32, delay: i * 0.04 } }}
                   transition={spring}
                 >
                   <PlayingCard
-                    layoutId={pair.attack}
                     card={pair.attack}
                     trumpSuit={view.trumpSuit}
                     target={isTarget}
                     transition={spring}
+                    initial={ontoTable(pair.attack)}
+                    animate={{ x: 0, y: 0, scale: 1, rotate: i % 2 === 0 ? -2.5 : 2.5 }}
                     onClick={() => onTableCard(pair.attack)}
-                    style={{ rotate: i % 2 === 0 ? -2 : 2 }}
                   />
                   <AnimatePresence>
                     {pair.defense && (
                       <PlayingCard
-                        layoutId={pair.defense}
                         key={pair.defense}
                         card={pair.defense}
                         trumpSuit={view.trumpSuit}
                         className="bout__defense"
                         transition={spring}
-                        initial={{ opacity: 0, y: -18 }}
-                        animate={{ opacity: 1, y: 0, rotate: 7 }}
+                        initial={ontoTable(pair.defense)}
+                        animate={{ x: 0, y: 0, scale: 1, rotate: 7 }}
                       />
                     )}
                   </AnimatePresence>
@@ -296,6 +344,9 @@ export function DurakBoard({ session }: BoardProps) {
 
           <div className="actionbar__buttons">
             <EmotePalette session={session} />
+
+            {/* Only this one appears and disappears, and only because *you*
+                picked up a card — never because the game state twitched. */}
             <AnimatePresence mode="popLayout">
               {selectedCanTransfer && selected && (
                 <motion.button
@@ -310,35 +361,28 @@ export function DurakBoard({ session }: BoardProps) {
                   Pass it on ↷
                 </motion.button>
               )}
-
-              {myTurn && iAttack && canEndBout(ctx) && (
-                <motion.button
-                  key="end"
-                  layout
-                  className="btn btn--solid"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={() => send({ type: 'done' })}
-                >
-                  {endLabel}
-                </motion.button>
-              )}
-
-              {myTurn && !iAttack && canTake(ctx) && (
-                <motion.button
-                  key="take"
-                  layout
-                  className="btn btn--outline"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={() => send({ type: 'take' })}
-                >
-                  Take the table
-                </motion.button>
-              )}
             </AnimatePresence>
+
+            {/* The bout action stays put for the whole bout and greys out when
+                it is not available. Mounting it on `canEndBout`/`canTake` made
+                it flicker on every single view the server pushed. */}
+            {iAttack ? (
+              <button
+                className="btn btn--solid btn--action"
+                disabled={!myTurn || !canEndBout(ctx)}
+                onClick={() => send({ type: 'done' })}
+              >
+                {endLabel}
+              </button>
+            ) : (
+              <button
+                className="btn btn--outline btn--action"
+                disabled={!myTurn || !canTake(ctx)}
+                onClick={() => send({ type: 'take' })}
+              >
+                Take the table
+              </button>
+            )}
 
             <button
               className="btn btn--quiet"
@@ -358,12 +402,12 @@ export function DurakBoard({ session }: BoardProps) {
               const spread = Math.min(3.2, 24 / Math.max(n, 1));
               const playable = isPlayable(card);
               const lap = overlap(n, 0.14);
-              const from = flyFromDeck(deckRef.current, selfFanRef.current, i, n, lap);
+              const from = intoHand(card, i, n, lap);
               return (
                 <motion.div
                   key={card}
                   className="fan__slot"
-                  initial={{ opacity: 0, x: from.x, y: from.y, scale: 0.7, rotate: 14 }}
+                  initial={{ opacity: 0, ...from }}
                   animate={{
                     opacity: 1,
                     x: 0,
@@ -371,7 +415,7 @@ export function DurakBoard({ session }: BoardProps) {
                     rotate: (i - mid) * spread,
                     scale: 1,
                   }}
-                  exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.15 } }}
+                  exit={{ opacity: 0, transition: { duration: 0 } }}
                   transition={{ ...softSpring, delay: phase === 'deal' ? i * 0.075 : 0 }}
                   style={{
                     zIndex: selected === card ? 99 : i,
@@ -380,7 +424,6 @@ export function DurakBoard({ session }: BoardProps) {
                   whileHover={playable ? { y: -18 } : { y: -6 }}
                 >
                   <PlayingCard
-                    layoutId={card}
                     card={card}
                     trumpSuit={view.trumpSuit}
                     live={playable}

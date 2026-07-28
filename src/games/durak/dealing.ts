@@ -121,8 +121,12 @@ export function flyFromDeck(
   };
 }
 
-/** Delta from one element's centre to another's — used to send the shuffle
- *  stack home to the deck corner when it finishes. */
+/**
+ * Delta from one element's centre to another's.
+ *
+ * Used twice: to send the shuffle stack home to the deck corner, and to start
+ * a card the opponent just played up at their end of the table.
+ */
 export function centreDelta(from: HTMLElement | null, to: HTMLElement | null) {
   if (!from || !to) return { x: 0, y: 0 };
   const a = from.getBoundingClientRect();

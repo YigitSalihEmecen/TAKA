@@ -77,9 +77,7 @@ export function Home() {
           transition={{ duration: 0.8, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
         >
           A <em className="serif-italic">taka</em> is one of those small wooden boats the
-          fishermen keep on the eastern Black Sea. This one carries card games instead —
-          for the evenings we spend in two different cities. Open a table, send the four
-          letters, and we are sitting across from each other again.
+          fishermen keep on the eastern Black Sea. This one is just for us to play games on.
         </motion.p>
 
         <motion.div
