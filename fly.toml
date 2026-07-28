@@ -1,0 +1,27 @@
+# Fly.io config. `fly launch --no-deploy` then `fly deploy`.
+app = "taka"
+primary_region = "fra"   # pick the region nearest the two of you
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Keep one machine warm so there is no cold start when she opens the link.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 50
+    soft_limit = 25
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

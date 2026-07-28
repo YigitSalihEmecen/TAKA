@@ -1,0 +1,13 @@
+# Render blueprint. Push this repo to GitHub, then in Render:
+#   New → Blueprint → pick the repo. That is the whole setup.
+services:
+  - type: web
+    name: taka
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
