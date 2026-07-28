@@ -478,6 +478,11 @@ count). This is load-bearing:
 > the whole game — verified by asserting each column reports exactly one x
 > coordinate across a full game.
 
+Each bout sets **both** `gridColumn` and `gridRow: 1`. The row is not optional:
+with only a column set, grid auto-placement refuses to move backwards along a
+row, so a centre-outwards order (3, 4, 2, 5 …) spills onto new rows and the
+table renders as a staircase instead of a row.
+
 `flyOntoSlot()` derives a slot's centre by reading the used track sizes back out
 of `gridTemplateColumns`, so the geometry is never duplicated in JavaScript.
 

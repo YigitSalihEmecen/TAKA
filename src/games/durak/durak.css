@@ -63,6 +63,7 @@
   flex: none;
   display: grid;
   grid-template-columns: repeat(6, calc(var(--card-w) + 14px));
+  grid-template-rows: 1fr;
   column-gap: clamp(2px, 0.8vw, 12px);
   justify-content: center;
   align-items: center;

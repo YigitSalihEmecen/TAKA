@@ -294,7 +294,11 @@ export function DurakBoard({ session }: BoardProps) {
                 <motion.div
                   key={pair.attack}
                   className={`bout${isTarget ? ' is-target' : ''}`}
-                  style={{ gridColumn: SLOT_COLUMNS[i] ?? i + 1 }}
+                  // `gridRow` is not optional: with only a column set, grid
+                  // auto-placement refuses to move backwards along a row, so a
+                  // centre-outwards order (3, 4, 2, 5 …) spilled onto new rows
+                  // and the table came out as a staircase.
+                  style={{ gridColumn: SLOT_COLUMNS[i] ?? i + 1, gridRow: 1 }}
                   exit={{ opacity: 0, y: 40, scale: 0.85, transition: { duration: 0.32, delay: i * 0.04 } }}
                   transition={spring}
                 >
