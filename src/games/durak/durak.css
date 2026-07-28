@@ -85,6 +85,7 @@
 
 .bout {
   position: relative;
+  z-index: 1;
   width: calc(var(--card-w) + 14px);
   height: calc(var(--card-h) + 24px);
   flex: none;
@@ -93,6 +94,7 @@
 .bout .pcard {
   position: absolute;
   inset: 0 auto auto 0;
+  z-index: 1;
 }
 
 /* Offset by position, not by transform: `translate` on an element that framer
@@ -436,7 +438,6 @@
   box-shadow: var(--shade-card);
   border: 0.5px solid var(--card-edge);
   overflow: hidden;
-  will-change: transform;
   transition: box-shadow 0.28s var(--ease), filter 0.28s var(--ease), opacity 0.28s var(--ease);
 }
 
@@ -821,9 +822,21 @@
     gap: 6px;
   }
 
-  .emoterail__btn {
-    width: 28px;
-    height: 28px;
+  /* Pinned to the viewport rather than hung off the trigger: on a narrow
+     screen, anchoring to the trigger pushed the panel past the edge. */
+  .emotes__grid {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(var(--card-h) + 74px);
+    max-width: none;
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .emotes__btn {
+    min-width: 0;
+    width: 100%;
+    height: 36px;
   }
 }
 

@@ -11,13 +11,17 @@ cities.
 ## What's inside
 
 **Durak** — the Russian card game, ported from an earlier Godot version of mine.
-Two ways to play:
+
+**Backgammon** — the full thing: bar, hitting, bearing off, gammons. No doubling
+cube.
+
+Either one, two ways to play:
 
 - **Together.** Open a table, send the four-letter code (or just the link), and
   you're sitting across from each other.
 - **Alone.** Zoya, a bot, for when the other chair is empty.
 
-Also on the shelf, not built yet: Okey, Backgammon, Batak.
+Still to build: Batak.
 
 <br>
 

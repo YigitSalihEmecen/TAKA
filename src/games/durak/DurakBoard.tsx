@@ -218,8 +218,6 @@ export function DurakBoard({ session }: BoardProps) {
           <AnimatePresence initial={false}>
             {(phase === 'shuffle' ? [] : Array.from({ length: view.opponentCount })).map((_, i) => {
               const n = view.opponentCount;
-              const spread = Math.min(6, 42 / Math.max(n, 1));
-              const mid = (n - 1) / 2;
               const lap = overlap(n, 0.04);
               const from = flyFromDeck(deckRef.current, oppFanRef.current, i, n, lap, -70);
               return (
@@ -228,13 +226,8 @@ export function DurakBoard({ session }: BoardProps) {
                   className="fan__slot"
                   style={{ zIndex: i, marginInline: `calc(var(--card-w) * ${-lap})` }}
                   initial={{ opacity: 0, x: from.x, y: from.y, scale: 0.7, rotate: -14 }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                    y: Math.abs(i - mid) * 1.6,
-                    rotate: (i - mid) * spread,
-                    scale: 1,
-                  }}
+                  // Held flat rather than fanned — a squared-off row of backs.
+                  animate={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.18 } }}
                   transition={{ ...softSpring, delay: phase === 'deal' ? 0.04 + i * 0.075 : 0 }}
                 >

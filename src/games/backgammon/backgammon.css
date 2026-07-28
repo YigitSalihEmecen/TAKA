@@ -1,0 +1,364 @@
+/* ==========================================================================
+   Backgammon — the board
+   ========================================================================== */
+
+.bg {
+  /* Everything is derived from the checker, and the checker from whichever
+     runs out first — the height available for a stack of five, or the width
+     available for thirteen columns. Sizing points independently let the
+     checkers overflow the board. */
+  --bar-w: clamp(20px, 3.4vw, 36px);
+  --board-h: clamp(250px, 58vh, 540px);
+  --chk: min(calc((var(--board-h) - 62px) / 11), calc((100vw - var(--bar-w) - 44px) / 12));
+  --pt-w: var(--chk);
+  --checker-light: #f3ece0;
+  --checker-dark: #b25a3a;
+
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px max(14px, env(safe-area-inset-bottom));
+  background: var(--paper);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-theme='dark'] .bg {
+  --checker-light: #ded4c2;
+  --checker-dark: #a04e30;
+}
+
+.bg--empty {
+  display: grid;
+  place-items: center;
+}
+
+.bg__rail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.bg__rail--self {
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.bg__statusline {
+  flex: none;
+  height: 22px;
+  display: grid;
+  place-items: center;
+}
+
+.bg__status {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: clamp(13px, 1.9vw, 17px);
+  color: var(--ink-faint);
+}
+
+.bg__status.is-mine {
+  color: var(--clay);
+  font-style: normal;
+}
+
+/* --- the board itself ---------------------------------------------------- */
+
+.bg__board {
+  position: relative;
+  flex: none;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  width: max-content;
+  max-width: 100%;
+  height: var(--board-h);
+  padding: 6px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--felt) 88%, var(--clay) 6%), var(--felt));
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), var(--shade-2);
+}
+
+.bg__row {
+  display: grid;
+  grid-template-columns: repeat(6, var(--pt-w)) var(--bar-w) repeat(6, var(--pt-w));
+  align-items: start;
+  min-height: 0;
+}
+
+.bg__row--bottom {
+  align-items: end;
+}
+
+.bg__gap {
+  display: block;
+}
+
+/* --- a point ------------------------------------------------------------- */
+
+.pt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  min-width: 0;
+}
+
+.pt--bottom {
+  flex-direction: column-reverse;
+}
+
+.pt__wedge {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  transition: background 0.25s var(--ease);
+}
+
+.pt--bottom .pt__wedge {
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+}
+
+.pt--dark .pt__wedge {
+  background: color-mix(in srgb, var(--clay) 20%, transparent);
+}
+
+.pt__stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 0;
+  z-index: 1;
+  max-height: 100%;
+}
+
+.pt--bottom .pt__stack {
+  flex-direction: column-reverse;
+}
+
+.pt.is-source {
+  cursor: pointer;
+}
+
+.pt.is-source .pt__wedge {
+  background: color-mix(in srgb, var(--clay) 26%, transparent);
+}
+
+.pt.is-picked .pt__wedge {
+  background: color-mix(in srgb, var(--clay) 42%, transparent);
+}
+
+.pt.is-target {
+  cursor: pointer;
+}
+
+.pt.is-target .pt__wedge {
+  background: color-mix(in srgb, var(--clay) 34%, transparent);
+  animation: ptbreathe 1.6s ease-in-out infinite;
+}
+
+@keyframes ptbreathe {
+  50% {
+    background: color-mix(in srgb, var(--clay) 58%, transparent);
+  }
+}
+
+/* --- checkers ------------------------------------------------------------ */
+
+.chk {
+  display: grid;
+  place-items: center;
+  width: var(--chk);
+  height: var(--chk);
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28), inset 0 -1px 2px rgba(0, 0, 0, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.chk--me {
+  background: radial-gradient(circle at 34% 30%, #fff, var(--checker-light));
+  border: 1px solid rgba(0, 0, 0, 0.16);
+}
+
+.chk--them {
+  background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--checker-dark) 70%, #fff), var(--checker-dark));
+  border: 1px solid rgba(0, 0, 0, 0.28);
+}
+
+.chk__more {
+  font-size: calc(var(--chk) * 0.42);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.chk--them .chk__more {
+  color: #fff;
+}
+
+/* --- middle band: bar and dice ------------------------------------------- */
+
+.bg__mid {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 46px;
+}
+
+.bg__bar {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  top: -100%;
+  bottom: -100%;
+  width: var(--bar-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: 6px;
+  border: 0;
+  z-index: 2;
+}
+
+.bg__bar.is-picked {
+  background: color-mix(in srgb, var(--clay) 30%, transparent);
+}
+
+.bg__barlabel {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-ghost);
+}
+
+.bg__barstack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.bg__dice {
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.die {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shade-1);
+  transition: opacity 0.3s var(--ease);
+}
+
+.die.is-used {
+  opacity: 0.28;
+}
+
+.die__face {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  width: 18px;
+  height: 18px;
+}
+
+.die__pip {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+  justify-self: center;
+  align-self: center;
+}
+
+.die__pip.is-off {
+  background: transparent;
+}
+
+/* --- bear-off tray ------------------------------------------------------- */
+
+.bg__off {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  padding: 5px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+
+.bg__off:disabled {
+  cursor: default;
+}
+
+.bg__off.is-target {
+  border-style: solid;
+  border-color: var(--clay);
+  background: var(--clay-wash);
+  animation: ptbreathe 1.6s ease-in-out infinite;
+}
+
+.bg__offcount {
+  font-family: var(--display);
+  font-size: 17px;
+}
+
+.bg__offlabel {
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* --- action row ---------------------------------------------------------- */
+
+.bg__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 700px) {
+  .bg {
+    --board-h: clamp(240px, 50vh, 420px);
+    padding-inline: 4px;
+  }
+
+  .bg__rail--self {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .seatplate__role {
+    display: none;
+  }
+}

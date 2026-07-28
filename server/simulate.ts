@@ -90,5 +90,68 @@ const avg = lengths.reduce((a, b) => a + b, 0) / Math.max(lengths.length, 1);
 console.log(`\n${GAMES} games simulated`);
 console.log(`  seat 0 wins: ${outcomes.seat0}   seat 1 wins: ${outcomes.seat1}   draws: ${outcomes.draw}`);
 console.log(`  moves per game: avg ${avg.toFixed(1)}, max ${Math.max(...lengths)}`);
+
+// ===========================================================================
+// Backgammon
+// ===========================================================================
+
+import { backgammon, whoseTurn as bgTurn, type BackgammonState } from '../shared/games/backgammon/index.ts';
+import { CHECKERS, countAt } from '../shared/games/backgammon/rules.ts';
+
+function auditCheckers(s: BackgammonState, where: string) {
+  for (const seat of [0, 1] as Seat[]) {
+    let total = s.bar[seat] + s.off[seat];
+    for (let i = 0; i < 24; i++) total += countAt(s, i, seat);
+    if (total !== CHECKERS) fail(`${where}: seat ${seat} has ${total} checkers, expected ${CHECKERS}`);
+  }
+  for (let i = 0; i < 24; i++) {
+    const v = s.points[i];
+    if (!Number.isInteger(v)) fail(`${where}: point ${i} is not an integer (${v})`);
+  }
+}
+
+const bgOutcomes = { seat0: 0, seat1: 0 };
+const bgLengths: number[] = [];
+const BG_GAMES = Math.max(20, Math.round(GAMES / 4));
+
+for (let g = 0; g < BG_GAMES; g++) {
+  let state = backgammon.create(g * 2654435761 + 7);
+  let steps = 0;
+  auditCheckers(state, `bg ${g} start`);
+
+  while (!state.outcome && steps < 8000) {
+    const turn = bgTurn(state);
+    const move = backgammon.bot!(backgammon.view(state, turn));
+    if (!move) {
+      fail(`bg ${g}: seat ${turn} had no action at step ${steps} (phase ${state.phase})`);
+      break;
+    }
+    const res = backgammon.reduce(state, turn, move);
+    if (!res.ok) {
+      fail(`bg ${g}: engine rejected its own bot's ${move.type} — ${res.error}`);
+      break;
+    }
+    // The idle seat must never be able to act.
+    const idle = otherSeat(turn);
+    const stolen = backgammon.reduce(res.state, idle, { type: 'roll' });
+    if (stolen.ok && bgTurn(res.state) !== idle) fail(`bg ${g}: seat ${idle} acted out of turn`);
+
+    state = res.state;
+    auditCheckers(state, `bg ${g} step ${steps}`);
+    steps++;
+  }
+
+  if (!state.outcome) fail(`bg ${g}: no result after ${steps} steps`);
+  else {
+    bgLengths.push(steps);
+    if (state.outcome.winner === 0) bgOutcomes.seat0++;
+    else bgOutcomes.seat1++;
+  }
+}
+
+const bgAvg = bgLengths.reduce((a, b) => a + b, 0) / Math.max(bgLengths.length, 1);
+console.log(`${BG_GAMES} backgammon games simulated`);
+console.log(`  seat 0 wins: ${bgOutcomes.seat0}   seat 1 wins: ${bgOutcomes.seat1}`);
+console.log(`  actions per game: avg ${bgAvg.toFixed(1)}, max ${Math.max(...bgLengths)}`);
 console.log(failures === 0 ? '\n✓ all invariants held\n' : `\n✗ ${failures} failures\n`);
 process.exit(failures === 0 ? 0 : 1);

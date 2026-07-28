@@ -36,8 +36,8 @@ other side of the table from the name you set, so the UI can say "send this to
 Sofia" or "send this to Yiğit" as appropriate. Keep new copy in that register;
 do not drift back to product language.
 
-The first (and currently only) game is **Durak**, the Russian card game, ported
-from an earlier Godot implementation at `~/Documents/GODOT/durak`.
+Two games so far: **Durak**, the Russian card game, ported from an earlier Godot
+implementation at `~/Documents/GODOT/durak`; and **Backgammon**.
 
 Design brief: Anthropic's visual language — warm paper, ink, one clay accent,
 serif display type, generous motion. Explicitly *not* a standard-looking webapp.
@@ -116,9 +116,12 @@ because `tsx` runs the server files unbundled and needs real specifiers.
 │       ├── types.ts            GameDefinition contract, Seat, GameMeta, GameOutcome
 │       ├── cards.ts            deck building, seeded RNG, shuffle, card encoding
 │       ├── registry.ts         GAMES / GAME_LIST / UPCOMING
-│       └── durak/
-│           ├── rules.ts        pure predicates (beats, canAttackWith, …)
-│           └── index.ts        the Durak state machine + bot
+│       ├── durak/
+│       │   ├── rules.ts        pure predicates (beats, canAttackWith, …)
+│       │   └── index.ts        the Durak state machine + bot
+│       └── backgammon/
+│           ├── rules.ts        board maths, move generation, bearing off
+│           └── index.ts        the Backgammon state machine + bot
 │
 ├── server/
 │   ├── index.ts                HTTP + WebSocket, message handling, heartbeat
@@ -148,6 +151,9 @@ because `tsx` runs the server files unbundled and needs real specifiers.
     │   └── icons.tsx           hairline SVG icons
     ├── games/
     │   ├── registry.tsx        game id -> board component + "how it plays" copy
+    │   ├── backgammon/
+    │   │   ├── BackgammonBoard.tsx  points, bar, dice, bearing off
+    │   │   └── backgammon.css
     │   └── durak/
     │       ├── DurakBoard.tsx  the whole board (fans, table, actions, curtain)
     │       ├── PlayingCard.tsx one card, face or back
@@ -619,6 +625,36 @@ and play a game in both modes.
 
 ---
 
+### Backgammon
+
+`shared/games/backgammon/rules.ts` keeps the board in **one absolute frame**:
+`points[0..23]`, positive for seat 0, negative for seat 1. Seat 0 travels 23→0
+and bears off past 0; seat 1 travels 0→23. One frame means one set of rules to
+get right — `BackgammonBoard` mirrors it for whoever is looking, via
+`absOf(visual, you) = you === 0 ? visual : 23 - visual`, which puts each
+player's home board bottom-right exactly as on a real board.
+
+Two things worth knowing:
+
+- **Legality is computed, not trusted.** `legalMoves()` enforces the awkward
+  real rules — you must play as many dice as you can, and when only one of two
+  different dice is playable it must be the higher one — by searching how many
+  dice remain usable after each candidate (`maxDiceUsable`). The view ships the
+  resulting move list, so the board never reasons about rules and cannot offer
+  an illegal move.
+- **Dice live in the state.** `reduce` has to stay pure, so the state carries a
+  `seed` that each roll advances.
+
+> The bot's move ordering matters more than it looks. `movesForDie` scans points
+> 0→23 for both seats, but the seats travel in *opposite* directions, so raw
+> order shows one seat its front checkers first and the other its back ones.
+> With ties broken by first-seen that made the two bots play visibly different
+> games — seat 1 won 63% of 500 bot-vs-bot matches on a provably symmetric
+> engine. The bot now sorts candidates rearmost-first in pips, which brings it
+> back to ~47%. If you touch the bot, re-run that measurement.
+
+The doubling cube is not implemented.
+
 ## 10. How to change Durak
 
 | Change | File and place |
@@ -666,13 +702,17 @@ client's legal-move highlighting, and the bot at once. That is the point.
 There is no test framework on purpose; there are two scripts that assert the
 things that actually break.
 
-**`npm run test:rules`** (`server/simulate.ts`) — plays 400 bot-vs-bot games and
-after *every single move* checks:
+**`npm run test:rules`** (`server/simulate.ts`) — plays 400 Durak games and 100
+Backgammon games bot-vs-bot. For Durak, after *every single move* it checks:
 
 - all 36 cards are accounted for exactly once across deck, hands, table, discard;
 - the engine never rejects a move its own bot produced;
 - the idle seat cannot act out of turn;
 - every game terminates (step cap 4000).
+
+For Backgammon it checks that each seat always holds exactly fifteen checkers
+across board, bar and off; that the engine never rejects its own bot's move;
+that the idle seat cannot act; and that every game terminates.
 
 Prints win distribution and average game length. Exits non-zero on any failure.
 
@@ -739,6 +779,7 @@ Know these before "fixing" them:
 - **No drag and drop.** Tap-to-play is more reliable on phones; the Godot original
   used dragging and it does not survive touch well.
 - **No sound.** It gets played in bed, late, next to someone asleep.
+- **No doubling cube** in backgammon, and no match play — single games only.
 - **The attacker cannot interject while the defender thinks** — strict alternation,
   a deliberate simplification of real Durak for on-screen clarity.
 - **Single process.** Rooms are a `Map`; horizontal scaling would need a rewrite

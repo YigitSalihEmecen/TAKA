@@ -6,6 +6,7 @@
 
 import type { ComponentType } from 'react';
 import type { Session } from '../net/session.ts';
+import { BackgammonBoard } from './backgammon/BackgammonBoard.tsx';
 import { DurakBoard } from './durak/DurakBoard.tsx';
 
 export interface BoardProps {
@@ -45,6 +46,32 @@ export const GAME_UI: Record<string, GameUI> = {
       {
         title: 'Losing',
         body: 'Both hands refill to six until the deck is spent. Whoever is still holding cards when the other is empty is the durak — the fool.',
+      },
+    ],
+  },
+
+  backgammon: {
+    Board: BackgammonBoard,
+    howToPlay: [
+      {
+        title: 'The race',
+        body: 'Fifteen checkers each, moving in opposite directions around twenty-four points. Yours travel towards the home board at the bottom right of your screen. First to bring all fifteen home and off the board wins.',
+      },
+      {
+        title: 'The dice',
+        body: 'Throw one die each to see who starts — the higher throw plays those two numbers. After that you roll two dice and move one checker per die, or two moves with one checker. Roll a double and you get that number four times.',
+      },
+      {
+        title: 'Points and blots',
+        body: 'Two or more of your checkers make a point, and your opponent cannot land there. A single checker is a blot: land on it and it goes to the bar, and has to re-enter from the very start before anything else may move.',
+      },
+      {
+        title: 'Using both dice',
+        body: 'You must play as many dice as you legally can. If only one of the two can be played, it has to be the higher one. The board only offers you moves that obey this, so you cannot get it wrong.',
+      },
+      {
+        title: 'Bearing off',
+        body: 'Once all fifteen are in your home board you can start taking them off. An exact roll bears a checker off; a higher roll bears off from your furthest point when nothing sits behind it. Bear off all fifteen before your opponent bears off any and it is a gammon — twice the sting.',
       },
     ],
   },
