@@ -36,10 +36,15 @@
 
 .board__felt {
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
-  padding: 8px;
+  /* Extra headroom so the status line clears the opponent's fan, whose rotated
+     cards overhang the strip above. */
+  padding: 18px 8px 8px;
+  flex-direction: column;
+  gap: 14px;
   background:
     radial-gradient(
         ellipse 62% 78% at 50% 48%,
@@ -49,27 +54,28 @@
     var(--paper);
 }
 
+/* A fixed grid of slots. Cards are laid into a slot and stay there for the
+   rest of the bout — the table never re-centres itself, so nothing that has
+   already landed ever moves. Slots are filled centre-outwards (SLOT_COLUMNS)
+   so the table still reads as centred at any count. */
 .tabletop {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  position: relative;
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(6, calc(var(--card-w) + 14px));
+  column-gap: clamp(2px, 0.8vw, 12px);
   justify-content: center;
-  gap: clamp(6px, 1.4vw, 18px);
-  max-width: min(760px, 92%);
+  align-items: center;
   min-height: calc(var(--card-h) + 26px);
-  padding: 10px;
+  padding: 10px 0;
 }
 
-.tabletop.is-empty {
-  border: 1px dashed var(--line);
-  border-radius: 16px;
-  min-width: calc(var(--card-w) * 2.1);
-  min-height: calc(var(--card-h) + 8px);
-  opacity: 0.75;
-  transition: opacity 0.4s var(--ease);
-}
-
+/* Absolutely placed so the hint never occupies a grid slot. */
 .tabletop__hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -139,10 +145,8 @@
 /* --- status line -------------------------------------------------------- */
 
 .statusline {
-  position: absolute;
-  top: 10px;
-  left: 0;
-  right: 0;
+  flex: none;
+  height: 26px;
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -769,6 +773,13 @@
 @media (max-width: 700px) {
   :root {
     --card-w: clamp(48px, 16vw, 72px);
+  }
+
+  /* Six fixed slots will not fit side by side on a phone, so they overlap —
+     which reads as cards laid down on top of one another, and keeps every
+     slot in a fixed place. */
+  .tabletop {
+    column-gap: calc(var(--card-w) * -0.34);
   }
 
   /* No room to flank the table — tuck the piles into the bottom corners. */

@@ -134,3 +134,51 @@ export function centreDelta(from: HTMLElement | null, to: HTMLElement | null) {
   if (!a.width || !b.width) return { x: 0, y: 0 };
   return { x: b.left + b.width / 2 - (a.left + a.width / 2), y: b.top + b.height / 2 - (a.top + a.height / 2) };
 }
+
+/**
+ * Offset that puts a table slot on top of `source` — the hand a card is coming
+ * out of.
+ *
+ * The table is a grid of fixed-width columns, so a slot's centre can be derived
+ * exactly, and — crucially — it does not move as more cards are laid down.
+ * Reading the used track sizes back out of `gridTemplateColumns` means the
+ * geometry never has to be duplicated here.
+ */
+export function flyOntoSlot(
+  tableEl: HTMLElement | null,
+  sourceEl: HTMLElement | null,
+  column: number,
+): { x: number; y: number } {
+  if (!tableEl || !sourceEl) return { x: 0, y: -60 };
+
+  const table = tableEl.getBoundingClientRect();
+  const src = sourceEl.getBoundingClientRect();
+  if (!table.width || !src.width) return { x: 0, y: -60 };
+
+  const srcCx = src.left + src.width / 2;
+  const srcCy = src.top + src.height / 2;
+
+  const cs = getComputedStyle(tableEl);
+  const cols = cs.gridTemplateColumns.split(' ').map(parseFloat).filter((n) => !Number.isNaN(n));
+  const gap = parseFloat(cs.columnGap) || 0;
+  if (cols.length === 0) {
+    return { x: srcCx - (table.left + table.width / 2), y: srcCy - (table.top + table.height / 2) };
+  }
+
+  const total = cols.reduce((a, b) => a + b, 0) + gap * (cols.length - 1);
+  const idx = Math.max(0, Math.min(column, cols.length - 1));
+  let left = table.left + table.width / 2 - total / 2;
+  for (let i = 0; i < idx; i++) left += cols[i] + gap;
+
+  return { x: srcCx - (left + cols[idx] / 2), y: srcCy - (table.top + table.height / 2) };
+}
+
+/**
+ * Which grid column each bout occupies, in play order.
+ *
+ * Centre-outwards rather than left-to-right: the table keeps looking centred
+ * whatever the count, while every slot stays in a fixed place. A left-to-right
+ * row has to be re-centred every time a card is added, and that re-centring is
+ * exactly the shuffling-about this replaces.
+ */
+export const SLOT_COLUMNS = [3, 4, 2, 5, 1, 6];

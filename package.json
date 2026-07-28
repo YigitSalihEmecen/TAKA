@@ -28,7 +28,6 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.0",
-    "puppeteer-core": "^23.11.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
   }

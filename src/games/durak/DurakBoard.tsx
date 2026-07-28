@@ -14,7 +14,14 @@ import {
 import { EMOTES, emoteOf } from '@shared/protocol.ts';
 import type { BoardProps } from '../registry.tsx';
 import { PlayingCard } from './PlayingCard.tsx';
-import { SHUFFLE_MS, centreDelta, flyFromDeck, useDealSequence } from './dealing.ts';
+import {
+  SHUFFLE_MS,
+  SLOT_COLUMNS,
+  centreDelta,
+  flyFromDeck,
+  flyOntoSlot,
+  useDealSequence,
+} from './dealing.ts';
 import './durak.css';
 
 const spring = { type: 'spring' as const, stiffness: 460, damping: 38, mass: 0.9 };
@@ -110,9 +117,14 @@ export function DurakBoard({ session }: BoardProps) {
   const tableWasTaken =
     was.table.size > 0 && view.table.length === 0 && view.discardCount === was.discard;
 
-  /** A card landing on the table flies out of whichever hand played it. */
-  const ontoTable = (card: Card) => ({
-    ...centreDelta(tableRef.current, was.hand.has(card) ? selfFanRef.current : oppFanRef.current),
+  /** A card landing on the table flies out of whichever hand played it, into
+   *  the fixed slot it will occupy for the rest of the bout. */
+  const ontoTable = (card: Card, index: number) => ({
+    ...flyOntoSlot(
+      tableRef.current,
+      was.hand.has(card) ? selfFanRef.current : oppFanRef.current,
+      SLOT_COLUMNS[index] - 1,
+    ),
     scale: 0.84,
   });
 
@@ -281,8 +293,8 @@ export function DurakBoard({ session }: BoardProps) {
               return (
                 <motion.div
                   key={pair.attack}
-                  layout
                   className={`bout${isTarget ? ' is-target' : ''}`}
+                  style={{ gridColumn: SLOT_COLUMNS[i] ?? i + 1 }}
                   exit={{ opacity: 0, y: 40, scale: 0.85, transition: { duration: 0.32, delay: i * 0.04 } }}
                   transition={spring}
                 >
@@ -291,7 +303,7 @@ export function DurakBoard({ session }: BoardProps) {
                     trumpSuit={view.trumpSuit}
                     target={isTarget}
                     transition={spring}
-                    initial={ontoTable(pair.attack)}
+                    initial={ontoTable(pair.attack, i)}
                     animate={{ x: 0, y: 0, scale: 1, rotate: i % 2 === 0 ? -2.5 : 2.5 }}
                     onClick={() => onTableCard(pair.attack)}
                   />
@@ -303,7 +315,7 @@ export function DurakBoard({ session }: BoardProps) {
                         trumpSuit={view.trumpSuit}
                         className="bout__defense"
                         transition={spring}
-                        initial={ontoTable(pair.defense)}
+                        initial={ontoTable(pair.defense, i)}
                         animate={{ x: 0, y: 0, scale: 1, rotate: 7 }}
                       />
                     )}

@@ -465,10 +465,29 @@ refill from the stock, which is a different animation.
 > a `layoutId` and a `rotate`, inside a `.bout` wrapper that was also animating
 > its scale on enter. Explicit origins are immune to all of it.
 
+**The table is a fixed grid, not a centred row.** `.tabletop` is a six-column
+grid of fixed-width tracks, and bouts are assigned columns from `SLOT_COLUMNS`
+(`[3,4,2,5,1,6]` — centre-outwards, so the table still reads as centred at any
+count). This is load-bearing:
+
+> A centre-justified flex row re-positions every card already on the table each
+> time a new one is laid. The first card would land dead centre and then slide
+> ~65px sideways when the second arrived, while the second flew towards a target
+> that was still moving. That is the "flies to the middle, then teleports and
+> snaps into place" bug. With fixed columns a slot's position is constant for
+> the whole game — verified by asserting each column reports exactly one x
+> coordinate across a full game.
+
+`flyOntoSlot()` derives a slot's centre by reading the used track sizes back out
+of `gridTemplateColumns`, so the geometry is never duplicated in JavaScript.
+
 Two supporting details that are load-bearing:
 
 - A hand card's `exit` is instantaneous. Its table copy takes over from exactly
   the same point, so any fade would read as a duplicate card.
+- `.board__felt` is a centred flex **column**: status line, then table. The
+  status line used to be absolutely positioned over the felt, which the wider
+  grid then collided with.
 - The defence card is offset with `left`/`top`, not `translate`. A transform on
   a card that framer is animating gets measured into the projection and applied
   twice.
