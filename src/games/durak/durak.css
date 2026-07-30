@@ -785,8 +785,12 @@
   /* Override the *base*, not `--card-w`: the opponent's fan derives its own
      size from `--card-base`, so overriding only `--card-w` left that fan sized
      for a laptop and hanging off the side of the screen. */
+  /* Sized so six full-width bouts fit side by side without overlapping. Both
+     the hand and the table shrink together — the cards stay the same size as
+     each other and keep their proportions, which is what went wrong when only
+     the table's width was reduced. */
   :root {
-    --card-base: clamp(44px, 15vw, 70px);
+    --card-base: min(clamp(38px, 13vw, 64px), calc((100vw - 26px) / 6 - 14px));
   }
 
   /* Six fixed slots have to fit inside the viewport, and two earlier attempts
@@ -800,8 +804,6 @@
      Keep the cards exactly the size they are in hand, and make the slots
      narrower than a card so they overlap instead. */
   .tabletop {
-    width: calc(100vw - 20px);
-    grid-template-columns: repeat(6, minmax(0, 1fr));
     column-gap: 0;
   }
 

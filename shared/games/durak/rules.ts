@@ -63,11 +63,19 @@ export function canAttackWith(
 ): boolean {
   if (ctx.table.length >= attackLimit(ctx.round)) return false;
 
-  // You may never leave the defender with more to beat than they hold cards.
-  // Once they have yielded, everything on the table is bound for their hand,
-  // so the whole table counts against them rather than just the open cards.
-  const pressure = ctx.defenderTaking ? ctx.table.length : undefendedPairs(ctx.table).length;
-  if (pressure >= defenderHandCount) return false;
+  /*
+   * While the defender is still beating cards you may never leave them more to
+   * answer than they hold cards. Once they have *yielded*, though, they are
+   * picking the whole table up regardless — so only the bout limit applies.
+   *
+   * An earlier version counted the cards already on the table against the
+   * defender's remaining hand, which blocked the throw-in in a fifth of all
+   * taking positions: with three pairs down and three cards left in their hand
+   * the attacker was frozen out even holding a matching rank.
+   */
+  if (!ctx.defenderTaking && undefendedPairs(ctx.table).length >= defenderHandCount) {
+    return false;
+  }
 
   // The opening card of a bout is free; after that ranks must already be showing.
   if (ctx.table.length === 0) return true;

@@ -671,6 +671,7 @@ The doubling cube is not implemented.
 | Change | File and place |
 |---|---|
 | A rule (what beats what, limits) | `shared/games/durak/rules.ts` |
+| The throw-in limit | `canAttackWith` in `rules.ts` — note the `defenderTaking` branch |
 | Turn order / bout resolution / dealing | `shared/games/durak/index.ts` |
 | Make the bot smarter | `durak.bot()` in `shared/games/durak/index.ts` |
 | Bot speed | `durak.botDelay` |
@@ -793,6 +794,12 @@ Know these before "fixing" them:
 - **No doubling cube** in backgammon, and no match play — single games only.
 - **Negative CSS grid gaps do nothing** — gaps cannot be negative. Overlap by
   making the tracks narrower than the items instead.
+- **A yielding defender does not cap the throw-in.** While the defender is still
+  beating cards, the number of *unbeaten* attacks may not exceed their hand size.
+  Once they have taken, they are picking the whole table up regardless, so only
+  the bout limit applies. Counting the cards already down against their
+  remaining hand — which an earlier version did — froze the attacker out of a
+  fifth of all taking positions even when they held a matching rank.
 - **Do not override `--card-w` on a subtree.** `--card-h` is computed on `:root`
   from `:root`'s `--card-w` and descendants inherit that *already resolved*
   value, so overriding the width lower down shrinks cards horizontally only.
